@@ -18,7 +18,7 @@ class Routes
     public function __construct()
     {
         $this->dispatcher = simpleDispatcher(function (RouteCollector $r) {
-            $r->get('/', [HomeController::class, 'index']);
+            $r->get('/', [HomeController::class, 'list']);
             $r->get('/{id}', [HomeController::class, 'single']);
         });
     }
@@ -38,19 +38,18 @@ class Routes
                 $vars = $routeInfo[2];
                 [$controller, $method] = $handler;
                 $controllerInstance = new $controller();
-                $methodReflection = null;
                 try {
                     $methodReflection = new ReflectionMethod($controllerInstance, $method);
+                    $methodParams = $methodReflection->getParameters();
+                    foreach ($methodParams as $param) {
+                        if ($param->getType() && $param->getType()->getName() === Request::class) {
+                            $vars[$param->getName()] = $request;
+                        }
+                    }
+                    call_user_func_array([$controllerInstance, $method], $vars);
                 } catch (ReflectionException $e) {
                     echo 'Method Not Found: ' . $e->getMessage();
                 }
-                $methodParams = $methodReflection->getParameters();
-                foreach ($methodParams as $param) {
-                    if ($param->getType() && $param->getType()->getName() === Request::class) {
-                        $vars[$param->getName()] = $request;
-                    }
-                }
-                call_user_func_array([$controllerInstance, $method], $vars);
                 break;
         }
     }
