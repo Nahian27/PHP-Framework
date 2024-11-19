@@ -1,22 +1,17 @@
 <?php
 
-namespace phpTest\App\Controllers;
+namespace phpTest\src\Controllers;
 
-use phpTest\App\Classes\BaseController;
+use phpTest\src\App\Attributes\Route;
+use phpTest\src\App\Classes\BaseController;
 use Symfony\Component\HttpFoundation\Request;
 
 class HomeController extends BaseController
 {
-
+    #[Route('/')]
     public function list(Request $request): void
     {
         $data = $this->DB->query('select * from issue');
         $this->view('home', ['data' => $data, 'name' => $request->get('_name')]);
-    }
-
-    public function single(Request $request, string $id): void
-    {
-        $data = $this->DB->query('select * from issue where id = ?', $id);
-        $data && $this->view('single', ['item' => $data[0]]);
     }
 }

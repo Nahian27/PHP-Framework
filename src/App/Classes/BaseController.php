@@ -1,6 +1,6 @@
 <?php
 
-namespace phpTest\App\Classes;
+namespace phpTest\src\App\Classes;
 
 use Smarty\Exception;
 use Smarty\Smarty;
@@ -16,8 +16,8 @@ class BaseController
         $this->DB = DB::getInstance();
         $this->smarty = new Smarty();
         $this->smarty
-            ->setTemplateDir(__DIR__ . '/../Views')
-            ->setCompileDir(__DIR__ . '/../../public/temp')
+            ->setTemplateDir(__DIR__ . '/../../Views')
+            ->setCompileDir(__DIR__ . '/../../../public/temp')
             ->setEscapeHtml(true);
     }
 
@@ -32,6 +32,7 @@ class BaseController
         } catch (Exception|\Exception $e) {
             echo 'View Error: ' . $e->getMessage();
         }
+        exit();
     }
 
     public function json(array $data, int $status = 200): JsonResponse

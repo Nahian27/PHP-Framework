@@ -1,6 +1,6 @@
 <?php
 
-namespace phpTest\App\Classes;
+namespace phpTest\src\App\Classes;
 
 use PDO;
 use PDOException;

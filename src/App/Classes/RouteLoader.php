@@ -1,31 +1,46 @@
 <?php
 
-namespace phpTest\App;
+namespace phpTest\src\App\Classes;
 
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
-use phpTest\App\Controllers\HomeController;
+use phpTest\src\App\Attributes\Route;
+use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use Symfony\Component\HttpFoundation\Request;
 
-use function FastRoute\simpleDispatcher;
-
-class Routes
+class RouteLoader
 {
-    private Dispatcher $dispatcher;
+    private array $controllers;
 
-    public function __construct()
+    public function __construct(array $controllers)
     {
-        $this->dispatcher = simpleDispatcher(function (RouteCollector $r) {
-            $r->get('/', [HomeController::class, 'list']);
-            $r->get('/{id}', [HomeController::class, 'single']);
-        });
+        $this->controllers = $controllers;
     }
 
-    public function dispatch(string $httpMethod, string $uri, Request $request): void
+    public function collectRoutes(RouteCollector $routeCollector): void
     {
-        $routeInfo = $this->dispatcher->dispatch($httpMethod, $uri);
+        foreach ($this->controllers as $controller) {
+            try {
+                $reflection = new ReflectionClass($controller);
+                foreach ($reflection->getMethods() as $method) {
+                    foreach ($method->getAttributes(Route::class) as $attribute) {
+                        $route = $attribute->newInstance();
+                        $routeCollector->addRoute($route->httpMethod, $route->path, [$controller, $method->getName()]);
+                    }
+                }
+            } catch (ReflectionException $e) {
+                echo 'Controller Error: ' . $e->getMessage();
+            }
+        }
+    }
+
+    public function dispatch(Request $request, Dispatcher $dispatcher): void
+    {
+        $httpMethod = $request->getMethod();
+        $uri = $request->getPathInfo();
+        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         switch ($routeInfo[0]) {
             case Dispatcher::NOT_FOUND:
                 echo '404 Not Found';
@@ -34,9 +49,8 @@ class Routes
                 echo '405 Method Not Allowed';
                 break;
             case Dispatcher::FOUND:
-                $handler = $routeInfo[1];
+                [$controller, $method] = $routeInfo[1];
                 $vars = $routeInfo[2];
-                [$controller, $method] = $handler;
                 $controllerInstance = new $controller();
                 try {
                     $methodReflection = new ReflectionMethod($controllerInstance, $method);
